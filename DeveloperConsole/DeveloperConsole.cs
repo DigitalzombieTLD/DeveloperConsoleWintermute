@@ -13,7 +13,9 @@ namespace DeveloperConsoleWintermute {
         UnityEngine.Object console;
 
         public override void OnInitializeMelon() 
-        {            
+        {
+            UnityEngine.Object console = UnityEngine.Object.Instantiate(Resources.Load("uConsole"));
+            uConsole.m_Instance.m_Activate = KeyCode.F1;
             AddConsoleCommands();            
             Debug.Log($"[{Info.Name}] version {Info.Version} loaded!");
         }
@@ -24,11 +26,7 @@ namespace DeveloperConsoleWintermute {
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
         {
-            if (sceneName.Contains("Menu") && !console)
-            {
-                console = UnityEngine.Object.Instantiate(Resources.Load("uConsole"));
-                uConsole.m_Instance.m_Activate = KeyCode.F1;
-            }
+           
         }
 
         private static void AddConsoleCommands() {
