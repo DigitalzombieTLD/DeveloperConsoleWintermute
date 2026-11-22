@@ -12,14 +12,11 @@ A mod for The Long Dark that makes Hinterland's developer console accessible in-
 
 ## Installation
 
-This mod works for Episode 1 - 4!!!
+On Steam, install [MelonLoader](https://github.com/LavaGang/MelonLoader/releases) on the executable for the episodes you want to play.
 
-Wintermute is a complete separate game installation now.
+| Episodes | Executable inside the `TheLongDark` folder |
+| --- | --- |
+| 1–4 | `tld_dlc/wintermute/tld.exe` |
+| 5 | `tld_dlc/episode5/tld.exe` |
 
-It's located in \Steam\steamapps\common\TheLongDark\tld_dlc\wintermute\
-
-1. Install Melonloader 0.7.2 on the tld.exe inside wintermute folder
-2. Drop the DeveloperConsoleWintermute.dll in the newly created mods folder there.
-3. Start Wintermute through the game menu like normal. The game might restart a few times, no need to worry.
-
-When ingame, hit the F1 key to open up the console
+Put `DeveloperConsoleWintermute.dll` in the `Mods` folder next to that executable. Start the episode through the game menu and press **F1** to open the console.

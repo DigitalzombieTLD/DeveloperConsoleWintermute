@@ -1,6 +1,8 @@
 ﻿using Il2Cpp;
 using Il2CppAK;
 using MelonLoader;
+using System.Collections;
+using System.Reflection;
 using System.Xml.Linq;
 using UnityEngine;
 using Il2CppCollection = Il2CppSystem.Collections.Generic;
@@ -10,14 +12,82 @@ namespace DeveloperConsoleWintermute {
 
     internal class DeveloperConsole : MelonMod {
 
-        UnityEngine.Object console;
+        private const string ConsoleAddress = "uConsole";
 
-        public override void OnInitializeMelon() 
+        public override void OnInitializeMelon()
         {
-            UnityEngine.Object console = UnityEngine.Object.Instantiate(Resources.Load("uConsole"));
-            uConsole.m_Instance.m_Activate = KeyCode.F1;
-            AddConsoleCommands();            
-            Debug.Log($"[{Info.Name}] version {Info.Version} loaded!");
+            UnityEngine.Object prefab = Resources.Load(ConsoleAddress);
+            if (prefab != null)
+            {
+                UnityEngine.Object.Instantiate(prefab);
+                InitializeConsole("Resources");
+                return;
+            }
+
+            MelonCoroutines.Start(LoadAddressableConsole());
+        }
+
+        private IEnumerator LoadAddressableConsole()
+        {
+            object operation;
+            PropertyInfo isDone;
+            PropertyInfo result;
+            try
+            {
+                // Resolve Addressables at runtime so the same DLL works in Episodes 1–4.
+                Type addressables = Type.GetType("UnityEngine.AddressableAssets.Addressables, Unity.Addressables") ?? throw new TypeLoadException("Unity.Addressables is unavailable.");
+                MethodInfo instantiate = addressables.GetMethod("InstantiateAsync", new[]
+                {
+                    typeof(Il2CppSystem.Object), typeof(Transform), typeof(bool), typeof(bool)
+                }) ?? throw new MissingMethodException(addressables.FullName, "InstantiateAsync");
+
+                Type operationType = instantiate.ReturnType;
+                isDone = operationType.GetProperty("IsDone") ?? throw new MissingMemberException(operationType.FullName, "IsDone");
+                result = operationType.GetProperty("Result") ?? throw new MissingMemberException(operationType.FullName, "Result");
+                operation = instantiate.Invoke(null, new object[] { (Il2CppSystem.Object)ConsoleAddress, null, false, true });
+            }
+            catch (Exception ex)
+            {
+                LoggerInstance.Warning($"Could not start loading the console from Addressables. {ex.GetBaseException().Message}");
+                yield break;
+            }
+
+            while (true)
+            {
+                try
+                {
+                    if (isDone.GetValue(operation) is true)
+                    {
+                        if (result.GetValue(operation) is GameObject instance && instance != null)
+                            InitializeConsole("Addressables");
+                        else
+                            LoggerInstance.Warning($"Addressables did not load the '{ConsoleAddress}' prefab.");
+
+                        yield break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LoggerInstance.Warning($"Could not load the console from Addressables. {ex.GetBaseException().Message}");
+                    yield break;
+                }
+
+                yield return null;
+            }
+        }
+
+        private void InitializeConsole(string source)
+        {
+            uConsole console = uConsole.m_Instance;
+            if (console == null)
+            {
+                LoggerInstance.Warning($"The console prefab loaded via {source} without initializing uConsole.");
+                return;
+            }
+
+            console.m_Activate = KeyCode.F1;
+            AddConsoleCommands();
+            LoggerInstance.Msg($"Console loaded via {source}. Press F1 to open it.");
         }
 
         public override void OnApplicationQuit() {
